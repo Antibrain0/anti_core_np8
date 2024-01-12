@@ -843,6 +843,79 @@ heart={
     end
   end
 }
+bubble={
+init=function(_ENV)
+ _ENV.outline=true
+ _ENV.hitbox=rectangle(2,5,10,12)
+ _ENV.hide=false
+end,
+update=function(_ENV)
+ if lava==false then
+  _ENV.hitbox=rectangle(2,5,10,12)
+ elseif lava then
+  _ENV.hitbox=rectangle(4,4,12,12)
+ end
+ hit=_ENV.player_here()
+ if hit and lava then
+  kill_player(hit)
+ end
+ if _ENV.hide==false and lava==false then
+ if hit and hit.y<_ENV.y+3 then
+  if btn(🅾️) then
+   hit.spd=vector(hit.spd.x,-2)
+   psfx"1"
+  else
+   psfx"2"
+   hit.spd=vector(hit.spd.x,-1.3)
+  end
+  _ENV.hide=true
+  for ox=1,8,2 do
+   _ENV.init_smoke(ox,2)
+  end
+ elseif hit then
+  kill_player(hit) 
+ end
+ end
+ if _ENV.spr==65 then
+  _ENV.y-=0.3
+ elseif _ENV.spr==81 then
+  _ENV.y+=0.3
+ elseif _ENV.spr==97 then
+  _ENV.x-=0.3
+ elseif _ENV.spr==113 then
+  _ENV.x+=0.3
+ end
+if _ENV.spr==81 or _ENV.spr==65 then
+ if _ENV.y<-16 then
+  _ENV.y=lvl_h*8
+  _ENV.hide=false
+ end
+ if _ENV.y>lvl_h*8 then
+  _ENV.y=-16
+  _ENV.hide=false
+ end
+end
+if _ENV.spr==97 or _ENV.spr==113 then
+ if _ENV.x<-16 then
+  _ENV.x=lvl_w*8
+  _ENV.hide=false
+ end
+ if _ENV.x>lvl_w*8 then
+  _ENV.x=-16
+  _ENV.hide=false
+ end
+end
+end,
+draw=function(_ENV)
+  if _ENV.hide==false and lava==false then--draw sprs
+    sspr(8,32,8,16,_ENV.x,_ENV.y)
+    sspr(8,32,8,16,_ENV.x+8,_ENV.y,8,16,true)
+  elseif _ENV.hide==false and lava then
+    sspr(0,32,8,16,_ENV.x,_ENV.y)
+    sspr(0,32,8,16,_ENV.x+8,_ENV.y,8,16,true,true)
+  end
+end
+}
 booster={
  init=function(_ENV)
   _ENV.outline=true
