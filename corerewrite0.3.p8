@@ -36,6 +36,7 @@ pal,
 0,false
 
 lava=false
+lt=0
 
 local _g=_ENV --for writing to global vars
 
@@ -97,8 +98,22 @@ player={
 
     -- spike collision / bottom death
     if is_flag(0,0,-1) or
-	    y>lvl_ph and not exit_bottom then
+	    y>lvl_ph and not exit_bottom and not center then
 	    kill_player(_ENV)
+	   elseif center then
+      if _ENV.y>lvl_ph+16 then
+       _ENV.y=-16
+      end
+    end
+    
+    if lavaactive=="true" then
+     if _ENV.y>ly-4 or _ENV.y<ly-96 then
+      kill_player(_ENV)
+     end
+    elseif lavaactive=="up" then
+     if _ENV.y>ly-4 then
+      kill_player(_ENV)
+     end 
     end
 
     -- on ground checks
@@ -1442,8 +1457,20 @@ function load_level(id)
   for i,v in inext,split"exit_top,exit_right,exit_bottom,exit_left" do
     _ENV[v]=exits&(0.5<<i)~=0
   end
-
-
+  lvl_li=tbl[6]
+  lavaspd=tonum(tbl[8])
+  if tbl[9]==nil then
+   center=false
+  else
+   center=tbl[9]
+  end
+  lavaactive=lvl_li
+  if tbl[7]=="lava" then
+   lava=true
+  else
+   lava=false
+  end
+  ly=lvl_h*8
   --reload map
   if diff_level then
     reload()
@@ -1474,6 +1501,24 @@ function load_level(id)
   foreach(objects,function(_ENV)
     (type.end_init or time)(_ENV)
   end)
+  
+  if lavaactive=="true" then
+   if lava==true then
+    ly-=lavaspd
+   else
+    ly+=lavaspd
+   end
+  elseif lavaactive=="up" then
+   if lava==true then
+    ly-=lavaspd
+    if cam_y+64<ly then ly-=lavaspd*4.2 end
+   else
+    ly-=lavaspd-0.1
+    if cam_y+64<ly then ly-=lavaspd*3.9 end
+   end
+  else
+   ly=lvl_h*8
+  end
 
   --<camtrigger>--
   --generate camera triggers
@@ -1539,6 +1584,24 @@ function _update()
       move_camera(_ENV)
     end
   end)
+  
+    if lavaactive=="true" then
+   if lava==true then
+    ly-=lavaspd
+   else
+    ly+=lavaspd
+   end
+  elseif lavaactive=="up" then
+   if lava==true then
+    ly-=lavaspd
+    if cam_y+64<ly then ly-=lavaspd*4.2 end
+   else
+    ly-=lavaspd-0.1
+    if cam_y+64<ly then ly-=lavaspd*3.9 end
+   end
+  else
+   ly=lvl_h*8
+  end
 
 end
 
@@ -1652,6 +1715,73 @@ pal()
     ui_timer-=1
   end
 
+  if lavaactive=="true" then
+   lt+=lavaspd
+   if lt>=8 then lt=0 end
+   for x=-8,136,8 do
+     local qz=sin(x/100)*2
+     local lyc=ly+qz
+    if lava==true then
+     spr(30,x+(cam_x-64)-lt,lyc)
+     spr(30,x+(cam_x-64)+lt,lyc-97,1,1,true,true)
+    else
+     spr(29,x+(cam_x-64),ly+qz)
+     spr(29,x+(cam_x-64),ly+qz-97,1,1,true,true)
+    end
+   end
+   if lava==true then
+    rectfill(cam_x-64,ly+6,cam_x+64,cam_y+64,8)
+    rectfill(cam_x-64,ly-96,cam_x+64,cam_y-65,8)
+   else
+    rectfill(cam_x-64,ly+6,cam_x+64,cam_y+65,12)
+    rectfill(cam_x-64,ly-96,cam_x+64,cam_y-65,12)
+   end
+   for x=0,128,6 do
+    if lava==true then
+  
+    end
+   end
+  end
+  if lavaactive=="up" then
+   lt+=lavaspd
+   if lt>=8 then lt=0 end
+   for x=-8,136,8 do
+     local qz=sin(x/100)*2
+     local lyc=ly+qz
+    if lava==true then
+     spr(30,x+(cam_x-64)-lt,lyc)
+    else
+     spr(29,x+(cam_x-64),ly+qz)
+    end
+   end
+   if lava==true then
+    rectfill(cam_x-64,ly+6,cam_x+64,cam_y+65,8)
+   else
+    rectfill(cam_x-64,ly+6,cam_x+64,cam_y+65,12)
+   end
+  end
+  for x=0,128,6 do
+    local cx=cam_x-64
+    local cy=cam_y-64
+    local qz=sin(x/100)*2
+    local lyc=ly+qz
+   if lava==true then
+    circ(x+rnd"2"+2+cx,lyc+7+rnd"2",1,9)
+    circ(x+rnd"2"+5+cx,lyc+5+rnd"2",1,9)
+   else
+    circ(x+2+cx,(ly+qz)+7,1,1)
+    circ(x+5+cx,(ly+qz)+5,1,1)
+   end
+   if lavaactive=="true" then
+    if lava==true then
+     circ(x+rnd"2"+2+cx,lyc+rnd"2"-96,1,9)
+     circ(x+rnd"2"+5+cx,lyc+rnd"2"-98,1,9)
+    else
+     circ(x+2+cx,(ly+qz)-96,1,1)
+     circ(x+5+cx,(ly+qz)-98,1,1)
+    end
+   end
+  end
   -- <transition>
   camera()
   color"0"
@@ -1740,19 +1870,22 @@ end
 --[map metadata]
 
 --@begin
---level table
---"x,y,w,h,exit_dirs"
---[[
+--[[level table
+"x,y,w,h,exit,lavarising,is_hot,lavaspd,is_epicenter"
+lavarising:up/true(room)
+is_hot:true/false
+lavaspd:int(less then 1 best)
 exit directions 
 "0b"+"exit_left"+
 "exit_bottom"+
 "exit_right"+
 "exit_top" 
-(default top- 0b0001)]]
+(default top- 0b0001)
+]]
 levels={
-	"0,0,1,1",
+	"0,0,1,1,0b0010,up,lava,0.4",
  "1,0,3,1,0b0100",
- "0,1,1,1"
+ "0,1,1,1,0x0010,true,lava,0.3"
 }
 
 --<camtrigger>--
