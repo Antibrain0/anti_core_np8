@@ -1776,7 +1776,7 @@ mapdata={
 --list of music switch triggers
 --assigned levels will start the tracks set here
 music_switches={
- [0]=1
+ [0]=1,
  [1]=4
 }
 --@end
