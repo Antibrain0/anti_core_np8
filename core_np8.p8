@@ -1,7 +1,10 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
---newleste.p8 base cart
+--newleste.p8 core
+
+--core programming by antibrain
+--core sprites by antibrain
 
 --original game by:
 --maddy thorson + noel berry
